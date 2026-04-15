@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Générateur Requête PFEQ</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Babel pour compiler le JSX dans le navigateur -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Import Maps pour charger React et Lucide Icons en tant que modules -->
+  <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18",
+        "react-dom/client": "https://esm.sh/react-dom@18/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.320.0"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Script principal de l'application (type module + babel) -->
+  <script type="text/babel" data-type="module">
+    import React, { useState } from 'react';
+    import { createRoot } from 'react-dom/client';
+    import { 
+      BookOpen, Target, BrainCircuit, ListChecks, 
+      PenTool, Eye, LayoutTemplate, Copy, CheckCircle, 
+      Settings, UserCheck, BookText, AlertCircle, FileText,
+      ArrowRight, ArrowLeft, Trash2, Volume2
+    } from 'lucide-react';
+
+    // --- DONNÉES PÉDAGOGIQUES ---
+
+    const ECHELONS = {
+      1: "Échelon 1 (Cycle 1) : L’élève fait semblant de lire lorsqu’il feuillette un livre. Il parvient à se le raconter intérieurement ou à le raconter à autrui en s’appuyant notamment sur les illustrations. Dans les textes qu’il aborde, il reconnaît quelques mots familiers ou déjà vus en classe. Il réussit à suivre des consignes simples comprenant surtout des mots connus. Il cherche aussi à donner du sens aux écrits qu’il rencontre autour de lui et il en parle volontiers.",
+      2: "Échelon 2 (Cycle 1) : L’élève lit des petits messages ou des textes courts, simples et illustrés constitués majoritairement de mots familiers et d’usage fréquent. Afin de construire du sens, il utilise, avec de l’aide, des stratégies de reconnaissance et d’identification de mots telles que les correspondances entre les lettres et les sons ainsi que le recours au contexte et aux illustrations. Il parvient à accomplir des tâches très simples liées à diverses intentions de lecture. Il réagit au texte dans la mesure où il est sollicité.",
+      3: "Échelon 3 (Cycle 1) : L’élève lit des textes courants et littéraires, simples et illustrés, dont la structure est généralement prévisible. Pour comprendre l’essentiel d’un texte, il utilise les stratégies appropriées et rappelées par l’enseignant. Lorsqu’il accomplit des tâches simples liées à diverses intentions de lecture, il dégage les informations explicites nécessaires. Quand il réagit au texte, il exprime ses réactions en ayant recours surtout au dessin ou à la parole.",
+      4: "Échelon 4 (Fin cycle 1 / Début cycle 2) : L’élève lit des textes courants et littéraires généralement courts, illustrés et présentant un niveau de difficulté approprié. Afin de comprendre les textes qu’il lit, l’élève a recours aux principales stratégies apprises. Lorsqu’il accomplit des tâches liées à diverses intentions de lecture, il dégage la plupart des informations explicites contenues dans un ou plusieurs courts textes. De façon générale, il réagit spontanément aux textes et ses réactions, souvent liées à ses expériences personnelles, peuvent se manifester par le recours à la parole, au dessin, au mime, au non verbal et quelquefois à l’écrit.",
+      5: "Échelon 5 (Cycle 2) : L’élève lit des textes courants et littéraires, proposant un défi approprié, généralement illustrés et présentés sur différents supports médiatiques. Il utilise la plupart des stratégies auxquelles il a été initié pour comprendre les textes. Lorsqu’il accomplit des tâches liées à diverses intentions de lecture, il dégage les éléments d’information explicites et, à l’occasion, certains éléments d’information implicites liés à ses connaissances et à ses expériences personnelles. Il réagit aux textes qu’il lit et ses réactions, orales et parfois écrites, s’appuient aussi sur ses expériences personnelles.",
+      6: "Échelon 6 (Cycle 2) : L’élève lit des textes courants et littéraires, proposant un défi approprié, souvent illustrés et présentés sur différents supports médiatiques. Il utilise les différentes stratégies apprises pour mieux saisir l’information. Lorsqu’il accomplit des tâches liées à diverses intentions de lecture ou rattachées aux disciplines scolaires, il parvient à dégager des éléments d’information explicites et, parfois, quelques-uns qui sont implicites. Il réagit aux textes qu’il lit surtout en les reliant à ses expériences personnelles et parfois à d’autres textes qu’il a lus.",
+      7: "Échelon 7 (Fin cycle 2 / Début cycle 3) : L’élève lit des textes courants et littéraires qui peuvent être illustrés et présentés sur différents supports médiatiques. Dans des textes qui présentent pour lui un défi raisonnable, il fait appel à diverses stratégies, dont certaines lui permettent de mieux saisir et organiser l’information. Pour répondre à diverses intentions de lecture et pour accomplir des tâches significatives dans plusieurs disciplines scolaires, il réussit à dégager les éléments d’information explicites et parfois ceux qui sont implicites. Lorsqu’il réagit à certains aspects des textes qu’il lit, il le fait généralement de façon pertinente en les reliant à ses expériences personnelles et à d’autres textes qu’il a lus.",
+      8: "Échelon 8 (Cycle 3) : L’élève lit une variété de textes courants et littéraires, présentés sur différents supports médiatiques et proposant un défi raisonnable. Lorsqu’il accomplit des tâches liées à diverses intentions de lecture dans différentes disciplines scolaires, il dégage avec efficacité les éléments d’information explicites et quelques éléments d’information implicites contenus dans un même texte et, à l’occasion, dans plusieurs textes, en utilisant les stratégies pertinentes. Il réagit à divers aspects des textes en les reliant à ses expériences personnelles ou scolaires et parfois à d’autres lectures.",
+      9: "Échelon 9 (Cycle 3) : L’élève lit une variété de textes courants et littéraires, présentés sur différents supports médiatiques et proposant un défi raisonnable. Lorsqu’il accomplit des tâches liées à diverses intentions de lecture dans différents contextes et disciplines scolaires, il dégage les éléments d’information explicites et implicites contenus dans plusieurs textes en utilisant efficacement des stratégies pertinentes. Il réagit à plusieurs aspects des textes et ses réactions témoignent de son interprétation personnelle, de ses connaissances, de ses expériences personnelles ou scolaires ainsi que de ses autres lectures.",
+      10: "Échelon 10 (Cycle 3) : L’élève lit une grande diversité de textes courants et littéraires, de niveaux de difficulté variables, et présentés sur différents supports médiatiques. Lorsqu’il accomplit des tâches liées à diverses intentions de lecture dans différents contextes et disciplines scolaires, il dégage les éléments d’information tant explicites qu’implicites contenus dans un ou plusieurs textes en ayant recours à des stratégies variées et pertinentes. Il réagit aux différents aspects des textes et ses réactions témoignent de ses champs d’intérêt, de son interprétation personnelle, de ses connaissances, de ses expériences personnelles ou scolaires ainsi que de ses autres lectures."
+    };
+
+    const ACTIVITES_DETAILS = {
+      'act_carre': "1️⃣ Carré d’influence\nDéfinition : Un outil qui permet de montrer les relations entre les personnages et les événements d’un texte.\nObjectif : Comprendre comment un personnage influence les autres et est influencé par eux.\nExemple : Dans une histoire, on peut montrer que Léa aide Tom, Tom influence la décision de Marie, etc.",
+      'act_portrait': "2️⃣ Portrait du personnage\nDéfinition : Une fiche ou un tableau qui décrit les caractéristiques, émotions, actions et relations d’un personnage.\nObjectif : Aider à mieux connaître le personnage et ses motivations.\nExemple :\nNom : Tom\nCaractéristiques : courageux, curieux\nÉmotions : peur dans la forêt, joie avec ses amis\nInfluence : motive ses amis à agir",
+      'act_ligne': "3️⃣ Ligne du temps\nDéfinition : Un outil graphique pour placer les événements du texte dans l’ordre chronologique.\nObjectif : Visualiser la séquence des actions et mieux comprendre l’histoire.\nExemple :\n8 h : Tom se réveille\n8 h 30 : Il prend son petit-déjeuner\n9 h : Il part à l’école\n10 h : Il joue dans la cour",
+      'act_mission': "4️⃣ Mission de lecture\nDéfinition : Une consigne ou un objectif clair donné à l’élève avant ou pendant la lecture.\nObjectif : Guider l’élève sur ce qu’il doit chercher, observer ou comprendre dans le texte.\nExemple : « Lis ce texte et note toutes les actions du personnage principal. »",
+      'act_ecg': "5️⃣ Électrocardiogramme (lecture)\nDéfinition : Représentation graphique de l’intensité des émotions ou tensions dans l’histoire.\nObjectif : Visualiser les moments de suspense, peur, joie ou action.\nExemple : Pendant une aventure : Début calme → petite montée de tension → grand moment d’action → retour au calme\nÀ la manière d’un électrocardiogramme qui rapporte les battements cardiaques d’un patient sur un graphique, on rapporte l’évolution des émotions du/des personnage(s) sur une ligne du temps.\nL’axe vertical du graphique représente une gradation des émotions:\nLes émotions négatives vont sous la ligne du temps.\nLes émotions positives se placent au-dessus de la ligne du temps.\nLa ligne du temps représente un état neutre.\nPlus l’émotion est intense, plus elle sera éloignée de la ligne du temps.",
+      'act_ancrage': "6️⃣ Tableau d’ancrage\nDéfinition : Tableau pour connecter les idées, personnages, lieux et événements à des concepts connus ou à des connaissances antérieures.\nObjectif : Aider les élèves à faire des liens et à organiser l’information.\nExemple :\nTexte : aventure dans la forêt\nLiens : forêt → animaux → courage → expériences personnelles",
+      'act_schema': "7️⃣ Schéma du récit\nDéfinition : Représentation visuelle de la structure du texte (situation initiale, événement déclencheur, actions, résolution, conclusion).\nObjectif : Aider à analyser la construction du récit et comprendre le déroulement de l’histoire.\nExemple :\nSituation initiale : Tom à la maison\nÉlément déclencheur : Tom perd son chat\nPéripéties : recherche dans la forêt\nDénouement : il retrouve le chat\nSituation finale : Tom rentre chez lui",
+      'act_design': "Focus : Design et interactivité\nInterface colorée, boutons cliquables, navigation intuitive exigée pour s'apparenter aux créations des maisons d'édition."
+    };
+
+    const DATA = {
+      niveaux: [
+        { id: '1re', label: '1re année (Cycle 1)', echelons: [1, 2, 3] },
+        { id: '2e', label: '2e année (Cycle 1)', echelons: [3, 4] },
+        { id: '3e', label: '3e année (Cycle 2)', echelons: [4, 5] },
+        { id: '4e', label: '4e année (Cycle 2)', echelons: [6, 7] },
+        { id: '5e', label: '5e année (Cycle 3)', echelons: [7, 8, 9] },
+        { id: '6e', label: '6e année (Cycle 3)', echelons: [9, 10] }
+      ],
+      criteres: [
+        { id: 'comp_rep', label: 'Comprendre : Repérage (explicite)', desc: 'Trouver une information écrite clairement (mot à mot).' },
+        { id: 'comp_rap', label: 'Comprendre : Rappel / Ordre', desc: 'Remettre des événements dans l\'ordre chronologique.' },
+        { id: 'comp_inf', label: 'Comprendre : Inférence (implicite)', desc: 'Déduire des informations non écrites directement (lire entre les lignes).' },
+        { id: 'reagir', label: 'Réagir', desc: 'Exprimer opinion/émotions par rapport au texte ou un personnage.' },
+        { id: 'apprecier', label: 'Apprécier', desc: 'Porter un jugement critique avec justification sur le texte.' },
+        { id: 'interpreter', label: 'Interpréter', desc: 'Aller au-delà de l\'information (intentions, valeurs, symboles).' }
+      ],
+      strategies: [
+        { id: 'visu', label: 'Visualiser', desc: 'S\'imaginer l\'histoire comme une succession de photos ou un film.' },
+        { id: 'redire', label: 'Redire dans mes mots', desc: 'S\'assurer de la compréhension en cours ou fin de lecture.' },
+        { id: 'predire', label: 'Prédire', desc: 'Anticiper la suite pour demeurer engagé.' },
+        { id: 'liens', label: 'Faire des liens', desc: 'Connecter avec le vécu, les connaissances ou d\'autres œuvres.' },
+        { id: 'inferer_strat', label: 'Inférer (Stratégie)', desc: 'Faire des liens entre les parties du texte ou indices.' },
+        { id: 'clarifier', label: 'Clarifier', desc: 'Comprendre les mots difficiles à l\'aide du contexte ou d\'outils.' }
+      ],
+      elements: [
+        { id: 'el_rappel', label: 'Faire un rappel', desc: 'Remettre les événements ou informations dans l\'ordre.' },
+        { id: 'el_inf', label: 'Inférer', desc: 'Lire entre les lignes et utiliser les indices.' },
+        { id: 'el_exp', label: 'Repérer informations explicites', desc: 'Identifier une réponse précise sans deviner.' },
+        { id: 'el_voc', label: 'Travailler le vocabulaire', desc: 'Développer le sens des mots nouveaux.' }
+      ],
+      procedes: [
+        'Comparaison', 'Métaphore', 'Hyperbole', 'Personnification', 'Répétition', 
+        'Énumération', 'Antithèse / Contraste', 'Oxymore', 'Question rhétorique', 
+        'Allitération', 'Assonance', 'Euphémisme', 'Litote', 'Ironie', 
+        'Champ lexical', 'Métonymie', 'Symbole', 'Gradation'
+      ],
+      habiletes: [
+        { id: 'hab_mots', label: 'Reconnaître des mots en un coup d\'œil' },
+        { id: 'hab_groupes', label: 'Lire par groupes de mots' },
+        { id: 'hab_ponct', label: 'Reconnaître la ponctuation' },
+        { id: 'hab_fluide', label: 'Fluidité', desc: 'Amener les élèves à lire de manière fluide avec une activité.' }
+      ],
+      activites: [
+        { id: 'act_carre', label: 'Carré d\'influence', desc: 'Montrer les relations entre personnages et événements.' },
+        { id: 'act_portrait', label: 'Portrait du personnage', desc: 'Fiche descriptive (caractéristiques, émotions).' },
+        { id: 'act_ligne', label: 'Ligne du temps', desc: 'Placer les événements dans l\'ordre chronologique.' },
+        { id: 'act_mission', label: 'Mission de lecture', desc: 'Objectif clair donné avant ou pendant la lecture.' },
+        { id: 'act_ecg', label: 'Électrocardiogramme', desc: 'Graphique de l\'intensité des émotions ou tensions.' },
+        { id: 'act_ancrage', label: 'Tableau d\'ancrage', desc: 'Connecter idées, personnages à des concepts connus.' },
+        { id: 'act_schema', label: 'Schéma du récit', desc: 'Situation initiale, déclencheur, actions, résolution.' },
+        { id: 'act_design', label: 'Focus : Design et interactivité', desc: 'Interface colorée, boutons, navigation intuitive exigée.' }
+      ]
+    };
+
+    function App() {
+      const [activeTab, setActiveTab] = useState(1);
+      const [copied, setCopied] = useState(false);
+      
+      // États de sélection (tous vierges par défaut)
+      const [texteSource, setTexteSource] = useState('');
+      const [selectedNiveau, setSelectedNiveau] = useState('');
+      const [selectedCriteres, setSelectedCriteres] = useState([]);
+      const [selectedStrategies, setSelectedStrategies] = useState([]);
+      const [selectedElements, setSelectedElements] = useState([]);
+      const [selectedProcedes, setSelectedProcedes] = useState([]);
+      const [selectedHabiletes, setSelectedHabiletes] = useState([]);
+      const [selectedActivites, setSelectedActivites] = useState([]);
+      const [includeGuide, setIncludeGuide] = useState(false);
+      const [isGenerated, setIsGenerated] = useState(false);
+      const [audioOption, setAudioOption] = useState('');
+
+      const toggleSelection = (setter, list, id) => {
+        setter(list.includes(id) ? list.filter(item => item !== id) : [...list, id]);
+      };
+
+      const resetForm = () => {
+        setTexteSource('');
+        setSelectedNiveau('');
+        setSelectedCriteres([]);
+        setSelectedStrategies([]);
+        setSelectedElements([]);
+        setSelectedProcedes([]);
+        setSelectedHabiletes([]);
+        setSelectedActivites([]);
+        setIncludeGuide(false);
+        setAudioOption('');
+        setActiveTab(1);
+        setIsGenerated(false);
+      };
+
+      const getEchelonsText = () => {
+        if (!selectedNiveau) return "[Aucun niveau sélectionné, les attentes du PFEQ ne peuvent être ciblées. Veuillez sélectionner un niveau.]";
+        const niveauObj = DATA.niveaux.find(n => n.id === selectedNiveau);
+        return niveauObj.echelons.map(ech => ECHELONS[ech]).join("\n\n");
+      };
+
+      const generatePrompt = () => {
+        const niveauObj = DATA.niveaux.find(n => n.id === selectedNiveau);
+        const niveauLabel = niveauObj ? niveauObj.label : "[À DÉFINIR]";
+        
+        const getLabels = (ids, dataList) => 
+          ids.map(id => {
+            const item = dataList.find(d => d.id === id || d === id);
+            return item?.label ? `- ${item.label} (${item.desc || ''})` : `- ${item}`;
+          }).join('\n');
+
+        let prompt = `Agis en tant que développeur pédagogique expert et concepteur de matériel didactique pour le primaire (Québec).
+Ta tâche est de CRÉER LE CODE (HTML/React/JS interactif) OU LA STRUCTURE DÉTAILLÉE d'une activité interactive de compréhension en lecture.
+
+L'activité produite doit être :
+- De qualité "Maison d'édition reconnue" (visuellement parfaite, interface colorée, professionnelle).
+- Numérique, interactive et très intuitive pour des élèves du primaire.
+- Munie de boutons cliquables permettant de naviguer entre différentes sections (Comprendre, Explorer les mots, Stratégies, Jouer avec le texte, Mission).
+
+--- PARAMÈTRES DU PROJET ---
+
+📍 NIVEAU ACADÉMIQUE : ${niveauLabel}
+
+🧠 CERVEAU DE L'IA (Référentiel PFEQ pour ce niveau) :
+Les activités doivent correspondre précisément à ces attentes de fin de cycle (Échelons de lecture) :
+${getEchelonsText()}
+
+📖 TEXTE OU THÈME SOURCE : 
+"""
+${texteSource || "[L'IA doit inventer un texte riche et adapté au niveau choisi, ou se baser sur ce thème précis]"}
+"""
+
+--- SÉLECTIONS PÉDAGOGIQUES À INTÉGRER ---
+
+`;
+
+        if (selectedCriteres.length > 0) prompt += `1️⃣ CRITÈRES EN LECTURE CIBLÉS :\n${getLabels(selectedCriteres, DATA.criteres)}\n\n`;
+        if (selectedStrategies.length > 0) prompt += `2️⃣ STRATÉGIES DE LECTURE À MOBILISER :\n${getLabels(selectedStrategies, DATA.strategies)}\n\n`;
+        if (selectedElements.length > 0) prompt += `3️⃣ ÉLÉMENTS À TRAVAILLER (Focus compréhension) :\n${getLabels(selectedElements, DATA.elements)}\n\n`;
+        if (selectedProcedes.length > 0) prompt += `4️⃣ PROCÉDÉS D'AUTEUR / FIGURES DE STYLE :\n${selectedProcedes.map(p => `- ${p}`).join('\n')}\n\n`;
+        if (selectedHabiletes.length > 0) prompt += `5️⃣ HABILETÉS DE LECTURE :\n${getLabels(selectedHabiletes, DATA.habiletes)}\n\n`;
+        
+        if (selectedActivites.length > 0) {
+          prompt += `6️⃣ MODULES INTERACTIFS REQUIS DANS L'APPLICATION (Détails précis à respecter) :\n`;
+          selectedActivites.forEach(actId => {
+            if(ACTIVITES_DETAILS[actId]) {
+               prompt += `${ACTIVITES_DETAILS[actId]}\n\n`;
+            }
+          });
+        }
+
+        if (audioOption === 'yes') {
+          prompt += `7️⃣ FONCTIONNALITÉ AUDIO REQUISE :\nAudio\n\nAjoute une fonctionnalité Text-to-Speech avec Web Speech API pour lire directement le texte dans le navigateur.\nObjectif : créer un bouton « Écouter » qui :\nlit le texte à voix haute immédiatement dès le clic, sans générer de fichier audio externe\nsurligne chaque phrase au fur et à mesure de la lecture pour suivre visuellement le texte\nExigences techniques :\nLe texte à lire est contenu dans un élément HTML avec l’id :\n\n<div id="texte-a-lire">...</div>\nAjouter un bouton pour lancer la lecture :\n <button id="btn-ecouter">🔊 Écouter</button>\nPendant la lecture :\ndiviser le texte en phrases (par . ! ?) et lire phrase par phrase avec speechSynthesis.speak()\nsurligner la phrase entière en cours de lecture et enlever le surlignage dès la fin de la phrase\nle bouton devient « Lecture… » pendant la lecture et redevient actif après\nl’utilisateur peut relancer la lecture autant de fois qu’il veut\nOptimisation pour texte long (ex : 500 mots) :\nne pas surligner mot par mot → diviser par phrase seulement\nminimiser les changements DOM pour garder la lecture fluide\noption pour ajuster la vitesse de lecture via utter.rate = 1.1 ou 1.2\nFournir le code complet :\nHTML du bouton et du texte\nJavaScript pour : récupération du texte, division en phrases, lecture Web Speech API, surlignage synchronisé, gestion du bouton\nCSS simple pour le surlignage (ex. background: yellow)\ncommentaires clairs pour intégration facile\nLe code doit être autonome, clair et directement intégrable dans une page HTML de l’activité.\n\n`;
+        }
+
+        prompt += `--- DIRECTIVES TECHNIQUES POUR LA CRÉATION DE L'ACTIVITÉ ---
+- Conçois une interface UI/UX avec des sections claires.
+- Intègre des mécanismes de rétroaction positive ludiques.
+- Assure-toi que le vocabulaire des questions respecte scrupuleusement les capacités cognitives de l'échelon ciblé.
+- Si des "Habiletés de lecture" (ex: Fluidité) sont cochées, invente une mécanique interactive originale (ex: chronomètre ludique, karaoké de mots).
+- CONSIGNE STRICTE : Le code de l'activité générée doit impérativement commencer par <!DOCTYPE html>.
+- CONSIGNE STRICTE : Le résultat de l'activité interactive finale (HTML/CSS/JS) doit obligatoirement pouvoir être déposé tel quel sur un GitHub Pages ou intégré facilement dans un Google Site (tout doit être géré côté client, sans base de données ni backend externe).
+
+`;
+
+        if (includeGuide) {
+          prompt += `⚠️ CONSIGNE STRICTE : LE GUIDE DU MAÎTRE
+Tu DOIS intégrer (soit via un bouton "Guide du maître" dans l'application, soit dans un onglet dédié) un guide pour l'enseignant.
+Ce guide doit inclure :
+- La démarche de réalisation de l'activité.
+- Les intentions pédagogiques claires.
+- Une série de "Questions essentielles" à poser aux élèves (à l'oral) pour stimuler leur réflexion, l'inférence et la réaction selon les choix effectués ci-haut.\n`;
+        }
+
+        return prompt;
+      };
+
+      const copyToClipboard = () => {
+        const textToCopy = generatePrompt();
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        
+        textArea.style.position = "fixed";
+        textArea.style.left = "-99999px";
+        textArea.style.top = "-99999px";
+        
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        
+        try {
+          document.execCommand('copy');
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+          console.error('Erreur lors de la copie', err);
+        }
+        
+        document.body.removeChild(textArea);
+      };
+
+      const TabButton = ({ id, icon: Icon, title }) => (
+        <button
+          onClick={() => setActiveTab(id)}
+          className={`flex items-center gap-3 w-full p-4 text-left transition-all duration-200 border-l-4 ${
+            activeTab === id 
+              ? 'border-indigo-600 bg-indigo-50 text-indigo-700 font-semibold' 
+              : 'border-transparent text-slate-600 hover:bg-slate-50 hover:text-indigo-600'
+          }`}
+        >
+          <Icon size={20} className={activeTab === id ? 'text-indigo-600' : 'text-slate-400'} />
+          <span className="hidden md:block">{title}</span>
+        </button>
+      );
+
+      return (
+        <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
+          {/* Header */}
+          <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
+            <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-indigo-600 p-2 rounded-lg text-white">
+                  <BrainCircuit size={24} />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-slate-800 leading-tight">Générateur PFEQ</h1>
+                  <p className="text-xs text-slate-500 font-medium">Création d'activités interactives (Primaire QC)</p>
+                </div>
+              </div>
+              <button 
+                onClick={resetForm}
+                className="hidden md:flex items-center gap-2 px-3 py-2 text-sm font-medium text-rose-600 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition-colors border border-transparent hover:border-rose-200"
+              >
+                <Trash2 size={16} /> Effacer les choix faits
+              </button>
+            </div>
+          </header>
+
+          <main className="flex-1 max-w-7xl mx-auto w-full flex flex-col md:flex-row gap-6 p-4">
+            
+            {/* Sidebar Tabs */}
+            <aside className="md:w-64 flex-shrink-0 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-row md:flex-col overflow-x-auto">
+              <TabButton id={1} icon={Target} title="Niveau Académique" />
+              <TabButton id={2} icon={ListChecks} title="Critères en lecture" />
+              <TabButton id={3} icon={BrainCircuit} title="Stratégies" />
+              <TabButton id={4} icon={PenTool} title="Éléments à travailler" />
+              <TabButton id={5} icon={Eye} title="Procédés d'auteur" />
+              <TabButton id={6} icon={BookOpen} title="Habiletés de lecture" />
+              <TabButton id={7} icon={LayoutTemplate} title="Types d'activités" />
+              <TabButton id={8} icon={Volume2} title="Version Audio" />
+            </aside>
+
+            {/* Configuration Area */}
+            <div className="flex-1 bg-white rounded-xl shadow-sm border border-slate-200 flex flex-col min-h-[600px]">
+              
+              <div className="p-6 flex-1 flex flex-col">
+                <div className="flex-1">
+                  {activeTab === 1 && (
+                    <div className="animate-fade-in">
+                      <h2 className="text-2xl font-bold text-slate-800 mb-2">Sélection du Niveau Académique</h2>
+                      <p className="text-slate-500 mb-6">L'IA s'adaptera automatiquement aux échelons de lecture du PFEQ correspondant au niveau choisi.</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {DATA.niveaux.map((niv) => (
+                          <button
+                            key={niv.id}
+                            onClick={() => setSelectedNiveau(niv.id)}
+                            className={`p-5 rounded-xl border-2 text-left transition-all ${
+                              selectedNiveau === niv.id 
+                                ? 'border-indigo-600 bg-indigo-50 shadow-md ring-2 ring-indigo-200' 
+                                : 'border-slate-200 hover:border-indigo-300 hover:bg-slate-50'
+                            }`}
+                          >
+                            <UserCheck size={24} className={`mb-3 ${selectedNiveau === niv.id ? 'text-indigo-600' : 'text-slate-400'}`} />
+                            <h3 className={`font-bold text-lg ${selectedNiveau === niv.id ? 'text-indigo-900' : 'text-slate-700'}`}>
+                              {niv.label}
+                            </h3>
+                            <p className="text-xs text-slate-500 mt-1">Échelons visés : {niv.echelons.join(', ')}</p>
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <div className="mt-8 bg-blue-50 border border-blue-100 rounded-xl p-5">
+                        <h4 className="flex items-center gap-2 text-blue-800 font-bold mb-3">
+                          <AlertCircle size={18} /> Texte source ou thème de l'histoire (Optionnel)
+                        </h4>
+                        <textarea
+                          className="w-full p-3 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm h-32"
+                          placeholder="Collez ici le texte à lire, ou décrivez le thème (ex: Une histoire de dragon courageux qui perd sa flamme...)"
+                          value={texteSource}
+                          onChange={(e) => setTexteSource(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 2 && (
+                    <div className="animate-fade-in">
+                      <h2 className="text-2xl font-bold text-slate-800 mb-2">Critères en lecture</h2>
+                      <p className="text-slate-500 mb-6">Sélectionnez les dimensions de la compréhension à évaluer.</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {DATA.criteres.map((crit) => (
+                          <label key={crit.id} className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedCriteres.includes(crit.id) ? 'border-teal-500 bg-teal-50' : 'border-slate-200 hover:bg-slate-50'}`}>
+                            <input type="checkbox" className="mt-1 w-5 h-5 text-teal-600 rounded border-slate-300 focus:ring-teal-500"
+                              checked={selectedCriteres.includes(crit.id)}
+                              onChange={() => toggleSelection(setSelectedCriteres, selectedCriteres, crit.id)}
+                            />
+                            <div>
+                              <span className={`block font-bold ${selectedCriteres.includes(crit.id) ? 'text-teal-900' : 'text-slate-700'}`}>{crit.label}</span>
+                              <span className="block text-sm text-slate-500 mt-1 leading-snug">{crit.desc}</span>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 3 && (
+                    <div className="animate-fade-in">
+                      <h2 className="text-2xl font-bold text-slate-800 mb-2">Stratégies de lecture</h2>
+                      <p className="text-slate-500 mb-6">Quelles stratégies les élèves devront-ils mobiliser ?</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {DATA.strategies.map((strat) => (
+                          <label key={strat.id} className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedStrategies.includes(strat.id) ? 'border-amber-500 bg-amber-50' : 'border-slate-200 hover:bg-slate-50'}`}>
+                            <input type="checkbox" className="mt-1 w-5 h-5 text-amber-600 rounded border-slate-300 focus:ring-amber-500"
+                              checked={selectedStrategies.includes(strat.id)}
+                              onChange={() => toggleSelection(setSelectedStrategies, selectedStrategies, strat.id)}
+                            />
+                            <div>
+                              <span className={`block font-bold ${selectedStrategies.includes(strat.id) ? 'text-amber-900' : 'text-slate-700'}`}>{strat.label}</span>
+                              <span className="block text-sm text-slate-500 mt-1 leading-snug">{strat.desc}</span>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 4 && (
+                    <div className="animate-fade-in">
+                      <h2 className="text-2xl font-bold text-slate-800 mb-2">Éléments à travailler</h2>
+                      <p className="text-slate-500 mb-6">Ciblez les mécanismes spécifiques de la compréhension.</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {DATA.elements.map((el) => (
+                          <label key={el.id} className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedElements.includes(el.id) ? 'border-rose-500 bg-rose-50' : 'border-slate-200 hover:bg-slate-50'}`}>
+                            <input type="checkbox" className="mt-1 w-5 h-5 text-rose-600 rounded border-slate-300 focus:ring-rose-500"
+                              checked={selectedElements.includes(el.id)}
+                              onChange={() => toggleSelection(setSelectedElements, selectedElements, el.id)}
+                            />
+                            <div>
+                              <span className={`block font-bold ${selectedElements.includes(el.id) ? 'text-rose-900' : 'text-slate-700'}`}>{el.label}</span>
+                              <span className="block text-sm text-slate-500 mt-1 leading-snug">{el.desc}</span>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 5 && (
+                    <div className="animate-fade-in">
+                      <h2 className="text-2xl font-bold text-slate-800 mb-2">Procédés d'auteur / Figures de style</h2>
+                      <p className="text-slate-500 mb-6">Sélectionnez les procédés littéraires présents dans le texte ou à explorer.</p>
+                      <div className="flex flex-wrap gap-3">
+                        {DATA.procedes.map((proc) => (
+                          <button
+                            key={proc}
+                            onClick={() => toggleSelection(setSelectedProcedes, selectedProcedes, proc)}
+                            className={`px-4 py-2 rounded-full border text-sm font-medium transition-all ${
+                              selectedProcedes.includes(proc)
+                                ? 'bg-purple-600 text-white border-purple-600 shadow-md transform scale-105'
+                                : 'bg-white text-slate-600 border-slate-300 hover:border-purple-400 hover:bg-purple-50'
+                            }`}
+                          >
+                            {proc}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 6 && (
+                    <div className="animate-fade-in">
+                      <h2 className="text-2xl font-bold text-slate-800 mb-2">Habiletés de lecture</h2>
+                      <p className="text-slate-500 mb-6">Compétences techniques et décodage.</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {DATA.habiletes.map((hab) => (
+                          <label key={hab.id} className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedHabiletes.includes(hab.id) ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:bg-slate-50'}`}>
+                            <input type="checkbox" className="mt-1 w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
+                              checked={selectedHabiletes.includes(hab.id)}
+                              onChange={() => toggleSelection(setSelectedHabiletes, selectedHabiletes, hab.id)}
+                            />
+                            <div>
+                              <span className={`block font-bold ${selectedHabiletes.includes(hab.id) ? 'text-blue-900' : 'text-slate-700'}`}>{hab.label}</span>
+                              {hab.desc && <span className="block text-sm text-slate-500 mt-1 leading-snug">{hab.desc}</span>}
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 7 && (
+                    <div className="animate-fade-in">
+                      <h2 className="text-2xl font-bold text-slate-800 mb-2">Types d'activités interactives</h2>
+                      <p className="text-slate-500 mb-6">Choisissez les gabarits visuels que l'IA devra programmer.</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {DATA.activites.map((act) => (
+                          <label key={act.id} className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${selectedActivites.includes(act.id) ? 'border-green-500 bg-green-50' : 'border-slate-200 hover:bg-slate-50'}`}>
+                            <input type="checkbox" className="mt-1 w-5 h-5 text-green-600 rounded border-slate-300 focus:ring-green-500"
+                              checked={selectedActivites.includes(act.id)}
+                              onChange={() => toggleSelection(setSelectedActivites, selectedActivites, act.id)}
+                            />
+                            <div>
+                              <span className={`block font-bold ${selectedActivites.includes(act.id) ? 'text-green-900' : 'text-slate-700'}`}>{act.label}</span>
+                              <span className="block text-sm text-slate-500 mt-1 leading-snug">{act.desc}</span>
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTab === 8 && (
+                    <div className="animate-fade-in">
+                      <h2 className="text-2xl font-bold text-slate-800 mb-2">Version Audio du texte</h2>
+                      <p className="text-slate-500 mb-6">Souhaitez-vous intégrer une option de lecture à voix haute (Text-to-Speech) dans l'activité ?</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <label className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${audioOption === 'yes' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:bg-slate-50'}`}>
+                          <input type="radio" name="audio" className="mt-1 w-5 h-5 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                            checked={audioOption === 'yes'}
+                            onChange={() => setAudioOption('yes')}
+                          />
+                          <div>
+                            <span className={`block font-bold ${audioOption === 'yes' ? 'text-indigo-900' : 'text-slate-700'}`}>Intégrer une version audio du texte</span>
+                            <span className="block text-sm text-slate-500 mt-1 leading-snug">Ajoute un bouton d'écoute avec surlignage du texte pendant la lecture (Web Speech API).</span>
+                          </div>
+                        </label>
+
+                        <label className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${audioOption === 'no' ? 'border-slate-500 bg-slate-50' : 'border-slate-200 hover:bg-slate-50'}`}>
+                          <input type="radio" name="audio" className="mt-1 w-5 h-5 text-slate-600 border-slate-300 focus:ring-slate-500"
+                            checked={audioOption === 'no'}
+                            onChange={() => setAudioOption('no')}
+                          />
+                          <div>
+                            <span className={`block font-bold ${audioOption === 'no' ? 'text-slate-900' : 'text-slate-700'}`}>Aucune version audio du texte</span>
+                            <span className="block text-sm text-slate-500 mt-1 leading-snug">Le texte sera uniquement disponible en format écrit.</span>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Navigation Buttons (Précédent / Suivant) */}
+                <div className="mt-8 pt-4 border-t border-slate-100 flex items-center justify-between">
+                  {activeTab > 1 ? (
+                    <button 
+                      onClick={() => setActiveTab(activeTab - 1)} 
+                      className="flex items-center gap-2 text-indigo-600 font-medium px-4 py-2 hover:bg-indigo-50 rounded-lg transition-colors"
+                    >
+                      <ArrowLeft size={18} /> Précédent
+                    </button>
+                  ) : <div></div>}
+
+                  {activeTab < 8 ? (
+                    <button 
+                      onClick={() => setActiveTab(activeTab + 1)} 
+                      className="flex items-center gap-2 text-indigo-600 font-medium px-4 py-2 hover:bg-indigo-50 rounded-lg transition-colors"
+                    >
+                      Suivant <ArrowRight size={18} />
+                    </button>
+                  ) : <div></div>}
+                </div>
+
+              </div>
+
+              {/* Bottom Bar: Generate Options */}
+              <div className="bg-slate-50 border-t border-slate-200 p-6 rounded-b-xl flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex flex-col md:flex-row gap-4 items-center w-full md:w-auto">
+                  <label className="flex items-center gap-3 cursor-pointer bg-white px-4 py-3 border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition-colors w-full md:w-auto">
+                    <input 
+                      type="checkbox" 
+                      className="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 border-slate-300"
+                      checked={includeGuide}
+                      onChange={(e) => setIncludeGuide(e.target.checked)}
+                    />
+                    <div className="flex flex-col">
+                      <span className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <FileText size={16} className="text-indigo-600"/> Inclure le Guide du Maître
+                      </span>
+                      <span className="text-xs text-slate-500">Demander à l'IA d'ajouter les questions essentielles</span>
+                    </div>
+                  </label>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+                  <button 
+                    onClick={resetForm}
+                    className="flex items-center justify-center gap-2 px-6 py-3 w-full md:w-auto bg-white text-sm font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg shadow-sm transition-colors"
+                  >
+                    <Trash2 size={18} /> Effacer les choix faits
+                  </button>
+
+                  <button 
+                    onClick={() => {
+                      setIsGenerated(true);
+                      setTimeout(() => {
+                        const el = document.getElementById('result-section');
+                        el?.scrollIntoView({ behavior: 'smooth' });
+                      }, 50);
+                    }}
+                    className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <Settings size={20} />
+                    Générer la requête
+                  </button>
+                </div>
+              </div>
+            </div>
+          </main>
+
+          {/* Result Section */}
+          <section id="result-section" className="max-w-7xl mx-auto w-full p-4 mb-12">
+            <div className="bg-slate-800 rounded-2xl shadow-xl overflow-hidden border border-slate-700">
+              <div className="bg-slate-900 px-6 py-4 flex items-center justify-between border-b border-slate-700">
+                <div className="flex items-center gap-3">
+                  <BookText className="text-blue-400" size={24} />
+                  <h3 className="text-white font-bold text-lg">Requête finale (Prompt) prête à l'emploi</h3>
+                </div>
+                <button 
+                  onClick={copyToClipboard}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all ${
+                    copied ? 'bg-green-500 text-white' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+                  }`}
+                >
+                  {copied ? <CheckCircle size={18} /> : <Copy size={18} />}
+                  {copied ? 'Copié !' : 'Copier le prompt'}
+                </button>
+              </div>
+              <div className="p-6">
+                <textarea 
+                  readOnly 
+                  value={isGenerated ? generatePrompt() : ''}
+                  placeholder={!isGenerated ? "Vos choix ont été effacés. Cliquez sur « Générer la requête » pour créer un nouveau prompt..." : ""}
+                  className="w-full h-96 bg-slate-800 text-slate-200 font-mono text-sm p-4 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 custom-scrollbar resize-none"
+                />
+                <p className="text-slate-400 text-sm mt-4 italic">
+                  * Copiez ce texte et collez-le dans l'IA chargée de créer l'activité interactive. Les échelons du PFEQ et les définitions des activités y sont intégrés de manière exhaustive.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <style dangerouslySetInnerHTML={{__html: `
+            .custom-scrollbar::-webkit-scrollbar {
+              width: 8px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background: #1e293b;
+              border-radius: 4px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background: #475569;
+              border-radius: 4px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+              background: #64748b;
+            }
+            @keyframes fadeIn {
+              from { opacity: 0; transform: translateY(10px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+            .animate-fade-in {
+              animation: fadeIn 0.3s ease-out forwards;
+            }
+          `}} />
+        </div>
+      );
+    }
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
