@@ -83,7 +83,7 @@
         { id: 'visu', label: 'Visualiser', desc: 'S\'imaginer l\'histoire comme une succession de photos ou un film.' },
         { id: 'redire', label: 'Redire dans mes mots', desc: 'S\'assurer de la compréhension en cours ou fin de lecture.' },
         { id: 'predire', label: 'Prédire', desc: 'Anticiper la suite pour demeurer engagé.' },
-        { id: 'liens', label: 'Faire des liens', desc: 'Connecter avec le vécu, les connaissances ou d\'autres œuvres.' },
+        { id: 'liens', label: 'Faire des liens', desc: 'Faire des liens entre différentes parties du texte (ex: un objet obtenu au début utilisé plus tard, ou un trait de caractère qui se concrétise).' },
         { id: 'inferer_strat', label: 'Inférer (Stratégie)', desc: 'Faire des liens entre les parties du texte ou indices.' },
         { id: 'clarifier', label: 'Clarifier', desc: 'Comprendre les mots difficiles à l\'aide du contexte ou d\'outils.' }
       ],
@@ -202,6 +202,7 @@ ${texteSource || "[L'IA doit inventer un texte riche et adapté au niveau choisi
         
         if (selectedActivites.length > 0) {
           prompt += `6️⃣ MODULES INTERACTIFS REQUIS DANS L'APPLICATION (Détails précis à respecter) :\n`;
+          prompt += `⚠️ CONSIGNE STRICTE POUR CES MODULES : Les activités interactives proposées doivent être extrêmement élaborées, complètes et bien ficelées. Tu dois intégrer des images de qualité professionnelle au besoin (ex: illustrations d'un personnage vivant des émotions, outil visuel d'analyse des émotions, design abouti pour le carré d'influence). L'activité doit être visuellement parfaite et offrir des modalités de jeu et d'interactions complètes.\n\n`;
           selectedActivites.forEach(actId => {
             if(ACTIVITES_DETAILS[actId]) {
                prompt += `${ACTIVITES_DETAILS[actId]}\n\n`;
